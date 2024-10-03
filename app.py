@@ -81,6 +81,28 @@ def login():
     print(f"Watched lectures: {len(watched)}")
     print(f"Unwatched lectures: {len(unwatched)}")
 
+    # Automatically "watch" unwatched lectures
+    for lecture in unwatched:
+        print(f"Auto-watching lecture: {lecture['title']}")
+        driver.get(lecture['link'])
+
+        # Wait for the video player or content to load (adjust wait and selectors as needed)
+        try:
+            WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, 'video')))
+            video = driver.find_element(By.TAG_NAME, 'video')
+
+            # Simulate watching the video by waiting for its duration or by fast-forwarding (if applicable)
+            driver.execute_script("arguments[0].play();", video)  # Simulate clicking the play button
+            time.sleep(5)  # Adjust this to wait for the video duration or the necessary time
+
+            # Optionally, you can also fast-forward or mark the video as complete if it's allowed
+            # driver.execute_script("arguments[0].currentTime = arguments[0].duration;", video)  # Fast-forward to the end
+
+            print(f"Finished watching: {lecture['title']}")
+
+        except Exception as e:
+            print(f"Error watching lecture: {e}")
+
     driver.quit()
 
     # Render the watched/unwatched lectures in the template
