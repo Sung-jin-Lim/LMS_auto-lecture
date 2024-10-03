@@ -1,7 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By  # <-- Add this import
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait  # <-- Add this import
+from selenium.webdriver.support import expected_conditions as EC  # <-- Add this import
 import time
 
 app = Flask(__name__)
@@ -25,10 +27,10 @@ def login():
     driver = init_driver()
 
     # Log into the university's LMS
-    driver.get('https://learning.hanyang.ac.kr/login')  # Adjust to your login URL if necessary
+    driver.get('https://learning.hanyang.ac.kr/login')
     driver.find_element(By.ID, 'uid').send_keys(username)
     driver.find_element(By.ID, 'upw').send_keys(password)
-    driver.find_element(By.ID, 'login_btn').click()  # Adjust this selector
+    driver.find_element(By.ID, 'login_btn').click()
 
     # Wait for the login process to complete
     time.sleep(5)
@@ -36,22 +38,39 @@ def login():
     # Navigate to the specific course's lecture page (class 161529)
     driver.get('https://learning.hanyang.ac.kr/courses/161529/external_tools/140')
 
-    # Now, we will locate the lecture list based on the iframe or tool content
-    driver.switch_to.frame(driver.find_element(By.ID, 'tool_content'))
+    # Wait for the lecture elements to be present before interacting with them
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'xnmb-module_item-wrapper')))
 
-    # Locate the lectures (modify based on actual lecture structure)
-    lecture_elements = driver.find_elements(By.CLASS_NAME, 'lecture')  # Adjust the class selector
+    # Locate the lectures after they have loaded
+    lecture_elements = driver.find_elements(By.CLASS_NAME, 'xnmb-module_item-wrapper')
+    print(f"Number of lecture elements found: {len(lecture_elements)}")
+
     watched = []
     unwatched = []
 
-    for lecture in lecture_elements:
-        title = lecture.find_element(By.CLASS_NAME, 'title').text
-        status = lecture.find_element(By.CLASS_NAME, 'status').text  # Assuming there’s a status class
-        
-        if 'Watched' in status:
-            watched.append(title)
-        else:
-            unwatched.append(title)
+    for lecture_element in lecture_elements:
+        try:
+            # Locate the title and link
+            title_element = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-left-title')
+            title = title_element.text
+            link = title_element.get_attribute('href')
+            print(f"Title: {title}, Link: {link}")
+
+            # Locate the completion status
+            completion_status = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-completed')
+            status_class = completion_status.get_attribute('class')
+            print(f"Status class: {status_class}")
+
+            if "incomplete" in status_class:
+                unwatched.append(title)
+            else:
+                watched.append(title)
+
+        except Exception as e:
+            print(f"Error processing lecture: {e}")
+
+    print(f"Watched lectures: {len(watched)}")
+    print(f"Unwatched lectures: {len(unwatched)}")
 
     driver.quit()
 
