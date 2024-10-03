@@ -1,18 +1,31 @@
 from flask import Flask, render_template, request, redirect, url_for
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options  # Import Chrome options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait  # <-- Add this import
-from selenium.webdriver.support import expected_conditions as EC  # <-- Add this import
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import time
 
 app = Flask(__name__)
 
 # Initialize WebDriver (example with Chrome)
 def init_driver():
-    # Specify the path to the ChromeDriver
+    # Setup Chrome options to prevent detection
+    chrome_options = Options()
+    
+    # Disable Blink features and prevent WebDriver detection
+    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_experimental_option("useAutomationExtension", False)
+    
+    # Optional: Set window size if needed
+    chrome_options.add_argument("start-maximized")  # Open browser in maximized mode
+    
+    # Initialize Chrome WebDriver with the modified options
     service = Service('/opt/homebrew/bin/chromedriver')  # Path to chromedriver
-    driver = webdriver.Chrome(service=service)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    
     return driver
 
 @app.route('/')
@@ -38,11 +51,11 @@ def login():
     # Navigate to the specific course's lecture page (class 161529)
     driver.get('https://learning.hanyang.ac.kr/courses/161529/external_tools/140')
 
-    # Wait for the lecture elements to be present before interacting with them
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'xnmb-module_item-wrapper')))
-
+    # Wait for the lecture elements to be present
+    WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'xnmb-module_item-left-title')))
+    
     # Locate the lectures after they have loaded
-    lecture_elements = driver.find_elements(By.CLASS_NAME, 'xnmb-module_item-wrapper')
+    lecture_elements = driver.find_elements(By.CLASS_NAME, 'xnmb-module_item-left-title')
     print(f"Number of lecture elements found: {len(lecture_elements)}")
 
     watched = []
@@ -50,22 +63,17 @@ def login():
 
     for lecture_element in lecture_elements:
         try:
-            # Locate the title and link
-            title_element = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-left-title')
-            title = title_element.text
-            link = title_element.get_attribute('href')
+            title = lecture_element.text
+            link = lecture_element.get_attribute('href')
             print(f"Title: {title}, Link: {link}")
 
-            # Locate the completion status
-            completion_status = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-completed')
-            status_class = completion_status.get_attribute('class')
-            print(f"Status class: {status_class}")
-
-            if "incomplete" in status_class:
+            # Locate the completion status (adjust class selector if needed)
+            status_element = lecture_element.find_element(By.XPATH, '../..')  # Assuming status is a parent element
+            if 'incomplete' in status_element.get_attribute('class'):
                 unwatched.append(title)
             else:
                 watched.append(title)
-
+        
         except Exception as e:
             print(f"Error processing lecture: {e}")
 
