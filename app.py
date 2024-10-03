@@ -45,27 +45,14 @@ def login():
     driver.get('https://learning.hanyang.ac.kr/courses/161529/external_tools/140')
 
     # Switch to the iframe where the lecture content is loaded
-    try:
-        WebDriverWait(driver, 10).until(EC.frame_to_be_available_and_switch_to_it((By.ID, 'tool_content')))
-        print("Switched to iframe 'tool_content'")
-    except Exception as e:
-        print(f"Error switching to iframe: {e}")
-        driver.quit()
-        return "Error: Could not switch to iframe", 500
-
-    # Print the page source to verify if the content is loaded
-    print(driver.page_source)
+    WebDriverWait(driver, 10).until(EC.frame_to_be_available_and_switch_to_it((By.ID, 'tool_content')))
+    print("Switched to iframe 'tool_content'")
 
     # Wait for the lecture elements to be present
-    try:
-        WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.CLASS_NAME, 'xnmb-module_item-left-title')))
-    except Exception as e:
-        print(f"Timeout waiting for lecture elements: {e}")
-        driver.quit()
-        return "Error: Timeout while waiting for lecture elements to load", 500
+    WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'xnmb-module_item-wrapper')))
 
-    # Locate the lectures after they have loaded
-    lecture_elements = driver.find_elements(By.CLASS_NAME, 'xnmb-module_item-left-title')
+    # Locate the parent elements that contain both the title and the completion status
+    lecture_elements = driver.find_elements(By.CLASS_NAME, 'xnmb-module_item-wrapper')
     print(f"Number of lecture elements found: {len(lecture_elements)}")
 
     watched = []
@@ -73,17 +60,21 @@ def login():
 
     for lecture_element in lecture_elements:
         try:
-            title = lecture_element.text
-            link = lecture_element.get_attribute('href')
-            print(f"Title: {title}, Link: {link}")
+            # Locate the title and link
+            title_element = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-left-title')
+            title = title_element.text
+            link = title_element.get_attribute('href')
 
-            # Locate the completion status (adjust class selector if needed)
-            status_element = lecture_element.find_element(By.XPATH, '../..')  # Assuming status is a parent element
-            if 'incomplete' in status_element.get_attribute('class'):
-                unwatched.append(title)
+            # Locate the completion status
+            completion_status_element = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-completed')
+            status_class = completion_status_element.get_attribute('class')
+
+            # Check if the status is "incomplete" or "complete"
+            if 'incomplete' in status_class:
+                unwatched.append({'title': title, 'link': link})
             else:
-                watched.append(title)
-        
+                watched.append({'title': title, 'link': link})
+
         except Exception as e:
             print(f"Error processing lecture: {e}")
 
