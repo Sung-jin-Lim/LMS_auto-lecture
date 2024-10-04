@@ -88,19 +88,15 @@ def login():
 
         # Wait for the play button to appear and click it
         try:
-            play_button = WebDriverWait(driver, 20).until(
+            # Use XPath to select the exact play button within the container
+            play_button = WebDriverWait(driver, 60).until(
                 EC.element_to_be_clickable((By.CLASS_NAME, 'vc-front-screen-play-btn'))
             )
             play_button.click()  # Click the play button
             print("Clicked the play button")
 
-        except Exception as e:
-            print(f"Error clicking play button for lecture: {lecture['title']}, Error: {e}")
-            continue
-
-        # Wait for the video element to load and play the video
-        try:
-            video_element = WebDriverWait(driver, 20).until(
+            # Wait for the video element to load and play the video
+            video_element = WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.CLASS_NAME, 'vc-vplay-video1'))
             )
             print(f"Video element found for lecture: {lecture['title']}")
@@ -114,11 +110,11 @@ def login():
             print(f"Playing video: {lecture['title']}")
 
             # Wait for the duration of the video to simulate watching it
-            time.sleep(duration)
+            time.sleep(duration + 10)  # Adding 10 seconds buffer to ensure the video finishes
             print(f"Finished watching: {lecture['title']}")
 
         except Exception as e:
-            print(f"Error watching lecture: {lecture['title']}, Error: {e}")
+            print(f"Error clicking play button or watching video for lecture: {lecture['title']}, Error: {e}")
             continue
 
     driver.quit()
