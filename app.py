@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -87,9 +87,14 @@ def login():
         driver.get(lecture['link'])
 
         try:
-            # Switch to the iframe if it's there
-            WebDriverWait(driver, 60).until(EC.frame_to_be_available_and_switch_to_it((By.TAG_NAME, 'iframe')))
-            print("Switched to video iframe")
+            # First, switch to the 'tool_content' iframe
+            WebDriverWait(driver, 60).until(EC.frame_to_be_available_and_switch_to_it((By.ID, 'tool_content')))
+            print("Switched to 'tool_content' iframe")
+
+            # Now, switch to the first iframe with the class 'xnlailvc-commons-frame'
+            iframe = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.CLASS_NAME, 'xnlailvc-commons-frame')))
+            driver.switch_to.frame(iframe)
+            print("Switched to 'xnlailvc-commons-frame' iframe")
 
             # Wait for the play button to appear and click it
             play_button = WebDriverWait(driver, 60).until(
