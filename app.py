@@ -16,7 +16,7 @@ def init_driver():
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option("useAutomationExtension", False)
     chrome_options.add_argument("start-maximized")
-    
+
     service = Service('/opt/homebrew/bin/chromedriver')
     driver = webdriver.Chrome(service=service, options=chrome_options)
     return driver
@@ -86,16 +86,19 @@ def login():
         print(f"Auto-watching lecture: {lecture['title']}")
         driver.get(lecture['link'])
 
-        # Wait for the play button to appear and click it
         try:
-            # Use XPath to select the exact play button within the container
+            # Switch to the iframe if it's there
+            WebDriverWait(driver, 60).until(EC.frame_to_be_available_and_switch_to_it((By.TAG_NAME, 'iframe')))
+            print("Switched to video iframe")
+
+            # Wait for the play button to appear and click it
             play_button = WebDriverWait(driver, 60).until(
                 EC.element_to_be_clickable((By.CLASS_NAME, 'vc-front-screen-play-btn'))
             )
-            play_button.click()  # Click the play button
+            play_button.click()
             print("Clicked the play button")
 
-            # Wait for the video element to load and play the video
+            # Wait for the video element to appear
             video_element = WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.CLASS_NAME, 'vc-vplay-video1'))
             )
@@ -114,7 +117,11 @@ def login():
             print(f"Finished watching: {lecture['title']}")
 
         except Exception as e:
-            print(f"Error clicking play button or watching video for lecture: {lecture['title']}, Error: {e}")
+            # Log page source for debugging if an error occurs
+            page_source = driver.page_source
+            print(f"Error watching video for lecture: {lecture['title']}, Error: {e}")
+            with open('error_page_source.html', 'w') as f:
+                f.write(page_source)
             continue
 
     driver.quit()
