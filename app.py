@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import request, redirect, url_for
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -6,6 +6,17 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
+import os
+import webbrowser  # Import the webbrowser module
+import threading  # To handle starting the server and opening the browser simultaneously
+
+from flask import Flask, render_template
+
+app = Flask(__name__,
+            template_folder=os.path.join(os.path.dirname(__file__), 'templates'),
+            static_folder=os.path.join(os.path.dirname(__file__), 'static'))
+
+
 
 app = Flask(__name__)
 
@@ -186,5 +197,13 @@ def login():
     # Render the watched/unwatched lectures in the template
     return render_template('lectures.html', watched=watched, unwatched=unwatched)
 
+
+# Function to open the URL in the browser
+def open_browser():
+    time.sleep(1)  # Wait for Flask to start
+    webbrowser.open("http://127.0.0.1:5001")
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    threading.Thread(target=open_browser).start()
+    
+    app.run(debug=False, port=5001)
