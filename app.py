@@ -53,7 +53,7 @@ def login():
     time.sleep(5)
 
     # Navigate to the specific course's lecture page (class 161529)
-    driver.get('https://learning.hanyang.ac.kr/courses/161529/external_tools/140')
+    driver.get('https://learning.hanyang.ac.kr/courses/158664/external_tools/140')
 
     # Switch to the iframe where the lecture content is loaded
     WebDriverWait(driver, 10).until(EC.frame_to_be_available_and_switch_to_it((By.ID, 'tool_content')))
