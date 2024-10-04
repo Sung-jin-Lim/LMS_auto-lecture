@@ -3,18 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login</title>
+    <title>Hanyang University LMS Auto Lecture Watcher</title>
+    <script>
+      function addLinkInput() {
+        const linkInputs = document.getElementById("linkInputs");
+        const input = document.createElement("input");
+        input.type = "text";
+        input.name = "course_links[]";
+        input.placeholder = "Enter Course Link";
+        linkInputs.appendChild(input);
+      }
+    </script>
   </head>
   <body>
     <h1>Login to Hanyang University LMS</h1>
-    <form action="/login" method="post">
+    <form method="POST" action="/login">
       <label for="username">Username:</label>
-      <input type="text" name="username" id="username" required />
-      <br />
+      <input type="text" id="username" name="username" required /><br /><br />
+
       <label for="password">Password:</label>
-      <input type="password" name="password" id="password" required />
-      <br />
-      <button type="submit">Login</button>
+      <input type="password" id="password" name="password" required /><br /><br />
+
+      <h3>Course Links:</h3>
+      <div id="linkInputs">
+        <input type="text" name="course_links[]" placeholder="Enter Course Link" required />
+      </div>
+      <button type="button" onclick="addLinkInput()">Add Another Course Link</button><br /><br />
+
+      <input type="submit" value="Login and Start Watching Lectures" />
     </form>
   </body>
 </html>
