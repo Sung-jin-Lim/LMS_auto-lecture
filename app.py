@@ -161,9 +161,20 @@ def login():
             driver.execute_script("arguments[0].play();", video_element)
             print(f"Playing video: {lecture['title']}")
 
-            # Wait for the duration of the video to simulate watching it
-            time.sleep(duration + 10)  # Adding 10 seconds buffer to ensure the video finishes
-            print(f"Finished watching: {lecture['title']}")
+            
+
+
+            # Check video progress periodically
+            while True:
+                current_time = driver.execute_script("return arguments[0].currentTime;", video_element)
+                print(f"Current video time: {current_time} / {duration} seconds")
+
+                if current_time >= duration:
+                    print(f"Finished watching: {lecture['title']}")
+                    break
+
+                time.sleep(10)  # Check every 10 seconds
+
 
         except Exception as e:
             # Log page source for debugging if an error occurs
