@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -87,14 +87,15 @@ def login():
         driver.get(lecture['link'])
 
         try:
+
             # First, switch to the 'tool_content' iframe
             WebDriverWait(driver, 60).until(EC.frame_to_be_available_and_switch_to_it((By.ID, 'tool_content')))
             print("Switched to 'tool_content' iframe")
 
-            # Now, switch to the first iframe with the class 'xnlailvc-commons-frame'
-            iframe = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.CLASS_NAME, 'xnlailvc-commons-frame')))
-            driver.switch_to.frame(iframe)
-            print("Switched to 'xnlailvc-commons-frame' iframe")
+            
+            # Switch to the iframe where the play button is located
+            WebDriverWait(driver, 60).until(EC.frame_to_be_available_and_switch_to_it((By.CLASS_NAME, 'xnlailvc-commons-frame')))
+            print("Switched to video iframe")
 
             # Wait for the play button to appear and click it
             play_button = WebDriverWait(driver, 60).until(
@@ -112,6 +113,16 @@ def login():
             # Get video duration using JavaScript
             duration = driver.execute_script("return arguments[0].duration;", video_element)
             print(f"Video duration: {duration} seconds for lecture: {lecture['title']}")
+
+            # Check for confirmation pop-up and click "OK" if it appears
+            try:
+                confirm_button = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.CLASS_NAME, 'confirm-ok-btn'))
+                )
+                confirm_button.click()
+                print("Clicked confirmation button")
+            except:
+                print("No confirmation pop-up found")
 
             # Play the video
             driver.execute_script("arguments[0].play();", video_element)
