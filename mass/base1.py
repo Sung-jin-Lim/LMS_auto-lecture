@@ -60,13 +60,6 @@ def login():
 
     for lecture_element in lecture_elements:
         try:
-            # First, check if the lecture has the mp4 icon
-            try:
-                mp4_icon = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-icon.mp4')
-            except:
-                print("No MP4 icon found, skipping this item...")
-                continue  # Skip if the lecture does not have the MP4 icon
-
             # Locate the title and link
             title_element = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-left-title')
             title = title_element.text
@@ -99,7 +92,7 @@ def login():
             print("Switched to 'tool_content' iframe")
 
             # Switch to the iframe where the play button is located
-            WebDriverWait(driver, 7).until(EC.frame_to_be_available_and_switch_to_it((By.CLASS_NAME, 'xnlailvc-commons-frame')))
+            WebDriverWait(driver, 60).until(EC.frame_to_be_available_and_switch_to_it((By.CLASS_NAME, 'xnlailvc-commons-frame')))
             print("Switched to video iframe")
 
             # Wait for the play button to appear and click it
@@ -144,10 +137,9 @@ def login():
                 )
                 video_src = video_element.get_attribute('src')
                 print(f"Actual video src: {video_src}")
-                
-            duration = driver.execute_script("return arguments[0].duration;", video_element)
-            print(duration) #prints preloader duration
             
+            print(f"Video element found for lecture: {lecture['title']}")
+
             # Check for confirmation pop-up and click "OK" if it appears
             try:
                 confirm_button = WebDriverWait(driver, 10).until(
@@ -158,30 +150,16 @@ def login():
             except:
                 print("No confirmation pop-up found")
 
+
             # Get video duration using JavaScript
             duration = driver.execute_script("return arguments[0].duration;", video_element)
             print(f"Video duration: {duration} seconds for lecture: {lecture['title']}")
 
-            if duration < 2:
-                print("Preloader video found, switching to the real video...")
-                print (video_src)
-                
-
-                
-
-                # Switch to the real video inside the 'video-play-video2' container
-                video_element = WebDriverWait(driver, 60).until(
-                    EC.presence_of_element_located((By.XPATH, "//div[@id='video-play-video2']//video[@class='vc-vplay-video1']"))
-                )
-                video_src = video_element.get_attribute('src')
-                print(f"Real video src: {video_src}")
             
 
-            
             # Play the second video
             driver.execute_script("arguments[0].play();", video_element)
             print(f"Playing video: {lecture['title']}")
-            
 
             
 
