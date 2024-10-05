@@ -1,6 +1,7 @@
 from flask import request, redirect, url_for
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -26,7 +27,8 @@ def init_driver():
     chrome_options.add_experimental_option("useAutomationExtension", False)
     chrome_options.add_argument("start-maximized")
 
-    service = Service('/opt/homebrew/bin/chromedriver')
+    # Use ChromeDriverManager to auto-manage chromedriver
+    service = Service(ChromeDriverManager().install())  
     driver = webdriver.Chrome(service=service, options=chrome_options)
     return driver
 
