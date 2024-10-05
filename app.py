@@ -9,16 +9,14 @@ import time
 import os
 import webbrowser  # Import the webbrowser module
 import threading  # To handle starting the server and opening the browser simultaneously
+import sys  # Import sys to gracefully exit the program
+from webdriver_manager.chrome import ChromeDriverManager  # Automatically manage chromedriver
 
 from flask import Flask, render_template
 
 app = Flask(__name__,
             template_folder=os.path.join(os.path.dirname(__file__), 'templates'),
             static_folder=os.path.join(os.path.dirname(__file__), 'static'))
-
-
-
-app = Flask(__name__)
 
 # Initialize WebDriver (example with Chrome)
 def init_driver():
@@ -36,12 +34,11 @@ def init_driver():
 def index():
     return render_template('index.html')
 
-# Route to handle login and scrape the lecture data for multiple courses
+# Route to handle login and scrape class 161529's lecture data
 @app.route('/login', methods=['POST'])
 def login():
     username = request.form['username']
     password = request.form['password']
-    course_links = request.form.getlist('course_links[]')  # Get all the course links
     driver = init_driver()
 
     # Log into the university's LMS
@@ -53,51 +50,66 @@ def login():
     # Wait for the login process to complete
     time.sleep(5)
 
+    # Navigate to the specific course's lecture page (class 161529)
+    driver.get('https://learning.hanyang.ac.kr/courses/158664/external_tools/140')
+
+    # Switch to the iframe where the lecture content is loaded
+    WebDriverWait(driver, 10).until(EC.frame_to_be_available_and_switch_to_it((By.ID, 'tool_content')))
+    print("Switched to iframe 'tool_content'")
+
+    # Wait for the lecture elements to be present
+    WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'xnmb-module_item-wrapper')))
+
+    # Locate the parent elements that contain both the title and the completion status
+    lecture_elements = driver.find_elements(By.CLASS_NAME, 'xnmb-module_item-wrapper')
+    print(f"Number of lecture elements found: {len(lecture_elements)}")
+
     watched = []
     unwatched = []
 
-    for course_link in course_links:
-        print(f"Navigating to course: {course_link}")
-        driver.get(course_link)
-
-        # Switch to the iframe where the lecture content is loaded
-        WebDriverWait(driver, 10).until(EC.frame_to_be_available_and_switch_to_it((By.ID, 'tool_content')))
-        print("Switched to iframe 'tool_content'")
-
-        # Wait for the lecture elements to be present
-        WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'xnmb-module_item-wrapper')))
-
-        # Locate the parent elements that contain both the title and the completion status
-        lecture_elements = driver.find_elements(By.CLASS_NAME, 'xnmb-module_item-wrapper')
-        print(f"Number of lecture elements found: {len(lecture_elements)}")
-
-
-        for lecture_element in lecture_elements:
+    for lecture_element in lecture_elements:
+        try:
+            # First, check if the lecture has the mp4 icon
             try:
-                # First, check if the lecture has the mp4 icon
-                try:
-                    mp4_icon = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-icon.mp4')
-                except:
-                    print("No MP4 icon found, skipping this item...")
-                    continue  # Skip if the lecture does not have the MP4 icon
+                mp4_icon = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-icon.mp4')
+            except:
+                print("No MP4 icon found, skipping this item...")
+                continue  # Skip if the lecture does not have the MP4 icon
 
-                # Locate the title and link
-                title_element = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-left-title')
-                title = title_element.text
-                link = title_element.get_attribute('href')
+            # Check if the lecture is marked as 'absent' (due date has passed)
+            try:
+                absent_status = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-meta_data-attendance_status.absent')
+                print("Lecture has passed its due date, skipping...")
+                continue  # Skip if the lecture's due date has passed
+            except:
+                pass  # No absent status found, continue with the lecture processing
 
-                # Locate the completion status
-                completion_status_element = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-completed')
-                status_class = completion_status_element.get_attribute('class')
+            # Locate the title and link
+            title_element = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-left-title')
+            title = title_element.text
+            link = title_element.get_attribute('href')
 
-                # Check if the status is "incomplete" or "complete"
-                if 'incomplete' in status_class:
-                    unwatched.append({'title': title, 'link': link})
-                else:
-                    watched.append({'title': title, 'link': link})
+            # Locate the completion status
+            completion_status_element = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-completed')
+            status_class = completion_status_element.get_attribute('class')
 
-            except Exception as e:
-                print(f"Error processing lecture: {e}")
+            # Check if the status is "incomplete" or "complete"
+            if 'incomplete' in status_class:
+                unwatched.append({'title': title, 'link': link})
+            else:
+                watched.append({'title': title, 'link': link})
+
+        except Exception as e:
+            print(f"Error processing lecture: {e}")
+
+    print(f"Watched lectures: {len(watched)}")
+    print(f"Unwatched lectures: {len(unwatched)}")
+
+    # Check if there are no unwatched lectures
+    if len(unwatched) == 0:
+        print("All lectures have been watched! Exiting program.")
+        driver.quit()  # Close the WebDriver session
+        sys.exit(0)  # Gracefully exit the program
 
     # Automatically "watch" unwatched lectures
     for lecture in unwatched:
@@ -157,11 +169,25 @@ def login():
                 print(f"Actual video src: {video_src}")
                 
             duration = driver.execute_script("return arguments[0].duration;", video_element)
+            print(duration) #prints preloader duration
+            
+            # Check for confirmation pop-up and click "OK" if it appears
+            try:
+                confirm_button = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.CLASS_NAME, 'confirm-ok-btn'))
+                )
+                confirm_button.click()
+                print("Clicked confirmation button")
+            except:
+                print("No confirmation pop-up found")
+
+            # Get video duration using JavaScript
+            duration = driver.execute_script("return arguments[0].duration;", video_element)
             print(f"Video duration: {duration} seconds for lecture: {lecture['title']}")
 
             if duration < 2:
                 print("Preloader video found, switching to the real video...")
-
+                print(video_src)
                 # Switch to the real video inside the 'video-play-video2' container
                 video_element = WebDriverWait(driver, 60).until(
                     EC.presence_of_element_located((By.XPATH, "//div[@id='video-play-video2']//video[@class='vc-vplay-video1']"))
@@ -169,7 +195,7 @@ def login():
                 video_src = video_element.get_attribute('src')
                 print(f"Real video src: {video_src}")
 
-            # Play the video
+            # Play the second video
             driver.execute_script("arguments[0].play();", video_element)
             print(f"Playing video: {lecture['title']}")
 
@@ -201,9 +227,8 @@ def login():
 # Function to open the URL in the browser
 def open_browser():
     time.sleep(1)  # Wait for Flask to start
-    webbrowser.open("http://127.0.0.1:5001")
+    webbrowser.open("http://127.0.0.1:5002")
 
 if __name__ == '__main__':
     threading.Thread(target=open_browser).start()
-    
-    app.run(debug=False, port=5001)
+    app.run(debug=False, port=5002)
