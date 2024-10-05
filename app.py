@@ -9,16 +9,14 @@ import time
 import os
 import webbrowser  # Import the webbrowser module
 import threading  # To handle starting the server and opening the browser simultaneously
+import sys  # Import sys to gracefully exit the program
+from webdriver_manager.chrome import ChromeDriverManager  # Automatically manage chromedriver
 
 from flask import Flask, render_template
 
 app = Flask(__name__,
             template_folder=os.path.join(os.path.dirname(__file__), 'templates'),
             static_folder=os.path.join(os.path.dirname(__file__), 'static'))
-
-
-
-app = Flask(__name__)
 
 # Initialize WebDriver (example with Chrome)
 def init_driver():
@@ -78,6 +76,14 @@ def login():
                 print("No MP4 icon found, skipping this item...")
                 continue  # Skip if the lecture does not have the MP4 icon
 
+            # Check if the lecture is marked as 'absent' (due date has passed)
+            try:
+                absent_status = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-meta_data-attendance_status.absent')
+                print("Lecture has passed its due date, skipping...")
+                continue  # Skip if the lecture's due date has passed
+            except:
+                pass  # No absent status found, continue with the lecture processing
+
             # Locate the title and link
             title_element = lecture_element.find_element(By.CLASS_NAME, 'xnmb-module_item-left-title')
             title = title_element.text
@@ -98,6 +104,12 @@ def login():
 
     print(f"Watched lectures: {len(watched)}")
     print(f"Unwatched lectures: {len(unwatched)}")
+
+    # Check if there are no unwatched lectures
+    if len(unwatched) == 0:
+        print("All lectures have been watched! Exiting program.")
+        driver.quit()  # Close the WebDriver session
+        sys.exit(0)  # Gracefully exit the program
 
     # Automatically "watch" unwatched lectures
     for lecture in unwatched:
@@ -175,27 +187,17 @@ def login():
 
             if duration < 2:
                 print("Preloader video found, switching to the real video...")
-                print (video_src)
-                
-
-                
-
+                print(video_src)
                 # Switch to the real video inside the 'video-play-video2' container
                 video_element = WebDriverWait(driver, 60).until(
                     EC.presence_of_element_located((By.XPATH, "//div[@id='video-play-video2']//video[@class='vc-vplay-video1']"))
                 )
                 video_src = video_element.get_attribute('src')
                 print(f"Real video src: {video_src}")
-            
 
-            
             # Play the second video
             driver.execute_script("arguments[0].play();", video_element)
             print(f"Playing video: {lecture['title']}")
-            
-
-            
-
 
             # Check video progress periodically
             while True:
@@ -207,7 +209,6 @@ def login():
                     break
 
                 time.sleep(10)  # Check every 10 seconds
-
 
         except Exception as e:
             # Log page source for debugging if an error occurs
@@ -226,11 +227,8 @@ def login():
 # Function to open the URL in the browser
 def open_browser():
     time.sleep(1)  # Wait for Flask to start
-    webbrowser.open("http://127.0.0.1:5001")
+    webbrowser.open("http://127.0.0.1:5002")
 
 if __name__ == '__main__':
-
     threading.Thread(target=open_browser).start()
-    
-    app.run(debug=True, port=5001)
-
+    app.run(debug=False, port=5002)

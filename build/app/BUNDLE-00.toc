@@ -1,0 +1,3 @@
+([('app',
+   '/Users/slippinghand/Documents/GitHub/LMS_auto-lecture/dist/app',
+   'EXECUTABLE')],)
