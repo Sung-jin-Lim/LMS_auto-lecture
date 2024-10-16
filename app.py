@@ -35,6 +35,16 @@ def init_driver():
 @app.route('/')
 def index():
     return render_template('index.html')
+#restart
+@app.route('/completion')
+def completion():
+    return render_template('completion.html')
+
+@app.route('/restart', methods=['POST'])
+def restart():
+    # Restart the whole process by redirecting to the main page
+    return redirect(url_for('index'))
+
 
 # Route to handle login and scrape class 161529's lecture data
 @app.route('/login', methods=['POST'])
@@ -115,8 +125,11 @@ def login():
     # Check if there are no unwatched lectures
     if len(unwatched) == 0:
         print("All lectures have been watched! Exiting program.")
+        
         driver.quit()  # Close the WebDriver session
-        sys.exit(0)  # Gracefully exit the program
+        # sys.exit(0)  # Gracefully exit the program
+        return redirect(url_for('completion'))
+        
 
     # Automatically "watch" unwatched lectures
     for lecture in unwatched:
@@ -224,6 +237,11 @@ def login():
             with open('error_page_source.html', 'w') as f:
                 f.write(page_source)
             continue
+
+    if len(unwatched) == 0:
+        print("All lectures watched.")
+        driver.quit()
+        return redirect(url_for('completion'))
 
     driver.quit()
 

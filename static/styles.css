@@ -98,3 +98,7 @@ button:hover {
   display: block;
   animation: fadeIn 0.3s ease;
 }
+
+body.completion {
+  flex-direction: column;
+}

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Completion</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body class="completion">
+    <h1>All lectures have been watched!</h1>
+    <br />
+    <p>Congratulations, all the lectures have been completed.</p>
+    <br />
+
+    <form action="{{ url_for('restart') }}" method="post">
+      <button type="submit">Go Back and Check Again</button>
+    </form>
+  </body>
+</html>
