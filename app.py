@@ -51,6 +51,11 @@ def login():
 
     # Wait for the login process to complete
     time.sleep(5)
+    
+    # add navigation to the dashboard first to prevent any mishaps from happening:
+    driver.get('https://learning.hanyang.ac.kr/')
+    
+    time.sleep(1)
 
     # Navigate to the specific course's lecture page (class 161529)
     driver.get('https://learning.hanyang.ac.kr/courses/158664/external_tools/140')
