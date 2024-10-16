@@ -26,6 +26,15 @@ def init_driver():
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option("useAutomationExtension", False)
     chrome_options.add_argument("start-maximized")
+    
+      # Add headless mode
+    chrome_options.add_argument("--headless")
+    
+    # Set window size to avoid issues in headless mode
+    chrome_options.add_argument("--window-size=1920,1080")
+    
+    chrome_options.add_argument("start-maximized")
+
 
     # Use ChromeDriverManager to auto-manage chromedriver
     service = Service(ChromeDriverManager().install())  
