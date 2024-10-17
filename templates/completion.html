@@ -2,18 +2,37 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Completion</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+    <title>Automation Complete</title>
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <!-- Custom CSS -->
+    <style>
+      body {
+        background-color: #f8f9fa;
+      }
+      .container {
+        max-width: 500px;
+        margin-top: 100px;
+      }
+      h1 {
+        margin-bottom: 30px;
+      }
+    </style>
   </head>
-  <body class="completion">
-    <h1>All lectures have been watched!</h1>
-    <br />
-    <p>Congratulations, all the lectures have been completed.</p>
-    <br />
-
-    <form action="{{ url_for('restart') }}" method="post">
-      <button type="submit">Go Back and Check Again</button>
-    </form>
+  <body>
+    <div class="container text-center">
+      <h1>Automation Completed Successfully!</h1>
+      <form action="/restart" method="POST">
+        <button type="submit" class="btn btn-primary">Start Over</button>
+      </form>
+    </div>
+    <!-- Optional JavaScript -->
+    <!-- jQuery and Bootstrap JS (if you plan to use Bootstrap's JS components) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- If you're not using any Bootstrap JS components, you can omit the following line -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   </body>
 </html>
