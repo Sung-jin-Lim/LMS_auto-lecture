@@ -20,3 +20,13 @@ For ease of use, you can download the precompiled **Windows** or **Mac** zip fil
 No Python or additional installation is required when using the precompiled executables.
 
 ---
+
+TODO:
+
+- progress bar
+- remove popup gui distractions
+- auto check unwatched course no need for url manual insert
+- allow auto check every 24 hours
+- cool css background
+- darkmode
+- 
